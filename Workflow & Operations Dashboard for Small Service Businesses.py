@@ -1,5 +1,4 @@
-# app_jewelry.py
-# Streamlit demo: Custom Jewelry + Repair Workflow Dashboard (CSV persistence)
+# Workflow & Operations Dashboard for Small Service Businesses
 
 from __future__ import annotations
 
@@ -11,10 +10,8 @@ from typing import List, Optional
 import pandas as pd
 import streamlit as st
 
-# -----------------------------
 # Config
-# -----------------------------
-st.set_page_config(page_title="Jewelry Workflow Dashboard", layout="wide")
+st.set_page_config(page_title="Service Workflow Dashboard", layout="wide")
 
 DATA_DIR = "data"
 CUSTOM_FILE = os.path.join(DATA_DIR, "custom_jobs.csv")
@@ -22,29 +19,20 @@ REPAIR_FILE = os.path.join(DATA_DIR, "repair_jobs.csv")
 
 CUSTOM_STATUSES = [
     "Consultation",
-    "Design Sketch",
-    "CAD Modeling",
-    "3D Approval",
-    "Casting",
-    "Stone Setting",
-    "Final Polish",
-    "Ready for Pickup",
-    "Completed",
+    "CAD / Design",
+    "Production",
+    "Pickup"
 ]
 
 REPAIR_STATUSES = [
-    "Intake",
-    "Waiting for Parts",
+    "Received",
     "In Progress",
-    "Quality Check",
-    "Ready for Pickup",
-    "Completed",
+    "Ready",
+    "Collected"
 ]
 
-# -----------------------------
 # Helpers
-# -----------------------------
-def ensure_data_dir() -> None:
+def ensure_data_dir() :
     os.makedirs(DATA_DIR, exist_ok=True)
 
 
@@ -59,22 +47,26 @@ def safe_float(x) -> float:
         return 0.0
 
 
-def compute_remaining(total: float, deposit: float) -> float:
+def compute_remaining(total,deposit):
     rem = total - deposit
-    return rem if rem >= 0 else 0.0
+    if rem >= 0 :
+        return rem
+    else:
+        return 0.0
 
 
-def load_or_init_csv(path: str, kind: str) -> pd.DataFrame:
-    """
-    kind: 'custom' or 'repair'
-    """
+def load_or_init_csv(path,kind):
     ensure_data_dir()
-
     if os.path.exists(path):
         df = pd.read_csv(path)
-        # Normalize columns just in case
         df.columns = [c.strip() for c in df.columns]
         return df
+    else:
+        df = pd.DataFrame(columns = ['Name' , 'Product' , 'Price', 'Status'])
+        
+
+       
+       
 
     if kind == "custom":
         df = pd.DataFrame(
@@ -82,16 +74,13 @@ def load_or_init_csv(path: str, kind: str) -> pd.DataFrame:
                 {
                     "Job_ID": "C-1001",
                     "Client": "Example Client",
-                    "Item": "Engagement ring",
-                    "Assigned_To": "CAD Team",
+                    "Project" : "newproject",
                     "Status": "Consultation",
-                    "Intake_Date": today_str(),
-                    "Due_Date": "",
                     "Total_Price": 1200.0,
-                    "Deposit_Paid": 200.0,
-                    "Remaining_Balance": 1000.0,
-                    "Paid": "No",
-                    "Notes": "Demo record",
+                    "Date" : today_str()
+                    
+                    
+                    
                 }
             ]
         )
@@ -101,17 +90,11 @@ def load_or_init_csv(path: str, kind: str) -> pd.DataFrame:
                 {
                     "Job_ID": "R-2001",
                     "Client": "Example Client",
-                    "Item": "Ring",
-                    "Repair_Type": "Resizing",
-                    "Assigned_To": "Bench",
-                    "Status": "Intake",
+                    "Status": "Received",
                     "Intake_Date": today_str(),
-                    "Est_Completion": "",
-                    "Total_Price": 120.0,
-                    "Deposit_Paid": 0.0,
-                    "Remaining_Balance": 120.0,
-                    "Paid": "No",
-                    "Notes": "Demo record",
+                    "Service" : "Repair",
+                    "Price": 120.0,
+
                 }
             ]
         )
@@ -120,15 +103,16 @@ def load_or_init_csv(path: str, kind: str) -> pd.DataFrame:
     return df
 
 
-def save_csv(df: pd.DataFrame, path: str) -> None:
+def save_csv(df,path):
     ensure_data_dir()
     df.to_csv(path, index=False)
 
 
-def money_fmt(x) -> str:
+def money_fmt(x):
     try:
-        return f"${float(x):,.2f}"
-    except Exception:
+        number = float(x)
+        return f'${number: , .2f}'
+    except:
         return "$0.00"
 
 
