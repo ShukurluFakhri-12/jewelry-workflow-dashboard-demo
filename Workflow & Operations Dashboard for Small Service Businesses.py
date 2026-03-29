@@ -62,24 +62,21 @@ def load_or_init_csv(path,kind):
         df.columns = [c.strip() for c in df.columns]
         return df
     else:
-        df = pd.DataFrame(columns = ['Name' , 'Product' , 'Price', 'Status'])
-        
-
-       
-       
+        cols = ["Order_ID", "Client", "Item", "Assigned_To", "Status", "Intake_Date", "Due_Date", "Total_Price", "Deposit_Paid", "Remaining_Balance", "Paid", "Notes"]
+        df = pd.DataFrame(columns=cols)
+                
 
     if kind == "custom":
         df = pd.DataFrame(
             [
                 {
-                    "Job_ID": "C-1001",
+                    "Order_ID": "C-1001",
                     "Client": "Example Client",
                     "Project" : "newproject",
                     "Status": "Consultation",
                     "Total_Price": 1200.0,
-                    "Date" : today_str()
-                    
-                    
+                    "Intake_Date" : today_str()
+                                      
                     
                 }
             ]
@@ -88,7 +85,7 @@ def load_or_init_csv(path,kind):
         df = pd.DataFrame(
             [
                 {
-                    "Job_ID": "R-2001",
+                    "Order_ID": "R-2001",
                     "Client": "Example Client",
                     "Status": "Received",
                     "Intake_Date": today_str(),
@@ -102,11 +99,9 @@ def load_or_init_csv(path,kind):
     df.to_csv(path, index=False)
     return df
 
-
 def save_csv(df,path):
     ensure_data_dir()
     df.to_csv(path, index=False)
-
 
 def money_fmt(x):
     try:
@@ -115,28 +110,22 @@ def money_fmt(x):
     except:
         return "$0.00"
 
-
-# -----------------------------
 # UI Components
-# -----------------------------
-st.title("Jewelry Workflow Dashboard")
-st.caption("Custom + Repair workflow demo (CSV-based). Designed for appointment-driven jewelry stores.")
+
+st.title("Service Workflow Dashboard")
+st.caption("Custom Orders & Repair tracking system. Works for any service-based business.")
 
 tab1, tab2, tab3 = st.tabs(["Custom Jobs", "Repair Jobs", "Analytics"])
 
-# -----------------------------
 # Load data into session
-# -----------------------------
+
 if "custom_df" not in st.session_state:
     st.session_state.custom_df = load_or_init_csv(CUSTOM_FILE, "custom")
 
 if "repair_df" not in st.session_state:
     st.session_state.repair_df = load_or_init_csv(REPAIR_FILE, "repair")
 
-
-# -----------------------------
 # CUSTOM JOBS TAB
-# -----------------------------
 with tab1:
     st.subheader("Custom Jobs (Consultation → CAD → Production → Pickup)")
     left, right = st.columns([1, 2])
@@ -144,10 +133,10 @@ with tab1:
     with left:
         st.markdown("### Add new custom job")
         with st.form("add_custom_form", clear_on_submit=True):
-            job_id = st.text_input("Job ID", placeholder="C-1002")
+            order_id = st.text_input("Order ID", placeholder="ORD-1001")
             client = st.text_input("Client", placeholder="Full name")
-            item = st.text_input("Item", placeholder="e.g., engagement ring, pendant")
-            assigned = st.text_input("Assigned To", placeholder="e.g., CAD Team, Bench, Tammy")
+            item = st.text_input("Service/İtem", placeholder="e.g., Repair, Maintenance, Custom build")
+            assigned = st.text_input("Assigned To", placeholder="e.g., Specialist name or department")
             status = st.selectbox("Status", CUSTOM_STATUSES, index=0)
             intake_date = st.date_input("Intake Date", value=date.today())
             due_date = st.date_input("Due Date (optional)", value=None)
@@ -158,8 +147,8 @@ with tab1:
             submitted = st.form_submit_button("Add job")
 
         if submitted:
-            if not job_id.strip():
-                st.error("Job ID is required.")
+            if not order_id.strip():
+                st.error("Order ID is required.")
             elif not client.strip():
                 st.error("Client is required.")
             else:
@@ -169,7 +158,7 @@ with tab1:
                 paid = "Yes" if remaining == 0 else "No"
 
                 new_row = {
-                    "Job_ID": job_id.strip(),
+                    "Order_ID": order_id.strip(),
                     "Client": client.strip(),
                     "Item": item.strip(),
                     "Assigned_To": assigned.strip(),
@@ -193,12 +182,11 @@ with tab1:
         st.markdown("### Filters")
         f_status = st.multiselect("Status filter", CUSTOM_STATUSES, default=CUSTOM_STATUSES)
         f_paid = st.selectbox("Paid filter", ["All", "Paid", "Unpaid"], index=0)
-        f_search = st.text_input("Search (client / item / job id)", placeholder="type to search")
+        f_search = st.text_input("Search (client / item / order id)", placeholder="type to search")
 
     with right:
         df = st.session_state.custom_df.copy()
-
-        # Normalize numeric columns
+        
         for col in ["Total_Price", "Deposit_Paid", "Remaining_Balance"]:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
@@ -217,7 +205,7 @@ with tab1:
         if f_search.strip():
             q = f_search.strip().lower()
             mask = (
-                df["Job_ID"].astype(str).str.lower().str.contains(q)
+                df["Order_ID"].astype(str).str.lower().str.contains(q)
                 | df["Client"].astype(str).str.lower().str.contains(q)
                 | df["Item"].astype(str).str.lower().str.contains(q)
             )
