@@ -367,7 +367,7 @@ with tab2:
         if f_search.strip():
             q = f_search.strip().lower()
             mask = (
-                df_f["Job_ID"].astype(str).str.lower().str.contains(q)
+                df_f["Order_ID"].astype(str).str.lower().str.contains(q)
                 | df_f["Client"].astype(str).str.lower().str.contains(q)
                 | df_f["Item"].astype(str).str.lower().str.contains(q)
                 | df_f["Repair_Type"].astype(str).str.lower().str.contains(q)
