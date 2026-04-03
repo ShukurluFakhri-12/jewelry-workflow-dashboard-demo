@@ -21,14 +21,16 @@ CUSTOM_STATUSES = [
     "Consultation",
     "CAD / Design",
     "Production",
-    "Pickup"
+    "Pickup",
+    "Completed"
 ]
 
 REPAIR_STATUSES = [
     "Received",
     "In Progress",
     "Ready",
-    "Collected"
+    "Collected",
+    "Completed"
 ]
 
 # Helpers
@@ -49,7 +51,7 @@ def safe_float(x) -> float:
 
 def compute_remaining(total,deposit):
     rem = total - deposit
-    if rem >= 0 :
+    if rem >= 0:
         return rem
     else:
         return 0.0
@@ -63,8 +65,7 @@ def load_or_init_csv(path,kind):
         return df
     else:
         cols = ["Order_ID", "Client", "Item", "Assigned_To", "Status", "Intake_Date", "Due_Date", "Total_Price", "Deposit_Paid", "Remaining_Balance", "Paid", "Notes"]
-        df = pd.DataFrame(columns=cols)
-                
+        df = pd.DataFrame(columns=cols)                
 
     if kind == "custom":
         df = pd.DataFrame(
@@ -72,7 +73,7 @@ def load_or_init_csv(path,kind):
                 {
                     "Order_ID": "C-1001",
                     "Client": "Example Client",
-                    "Project" : "newproject",
+                    "Item" : "New Project",
                     "Status": "Consultation",
                     "Total_Price": 1200.0,
                     "Intake_Date" : today_str()
@@ -89,8 +90,10 @@ def load_or_init_csv(path,kind):
                     "Client": "Example Client",
                     "Status": "Received",
                     "Intake_Date": today_str(),
-                    "Service" : "Repair",
-                    "Price": 120.0,
+                    "Repair_Type" : "Repair",
+                    "Total_Price": 120.0,
+                    "Deposit_Paid": 0.0,
+                    "Remaining_Balance": 120.0
 
                 }
             ]
@@ -106,7 +109,7 @@ def save_csv(df,path):
 def money_fmt(x):
     try:
         number = float(x)
-        return f'${number: , .2f}'
+        return f"${number:,.2f}"
     except:
         return "$0.00"
 
@@ -139,7 +142,7 @@ with tab1:
             assigned = st.text_input("Assigned To", placeholder="e.g., Specialist name or department")
             status = st.selectbox("Status", CUSTOM_STATUSES, index=0)
             intake_date = st.date_input("Intake Date", value=date.today())
-            due_date = st.date_input("Due Date (optional)", value=None)
+            due_date = st.date_input("Due Date")
             total_price = st.number_input("Total Price", min_value=0.0, step=10.0, value=0.0)
             deposit_paid = st.number_input("Deposit Paid", min_value=0.0, step=10.0, value=0.0)
             notes = st.text_area("Notes (optional)", height=80)
@@ -302,7 +305,7 @@ with tab2:
             assigned = st.text_input("Assigned To", placeholder="e.g., Repair Team")
             status = st.selectbox("Status", REPAIR_STATUSES, index=0)
             intake_date = st.date_input("Intake Date", value=date.today(), key="repair_intake_date")
-            est_completion = st.date_input("Estimated Completion (optional)", value=None, key="repair_est")
+            est_completion = st.date_input("Estimated Completion", key="repair_est")
             total_price = st.number_input("Total Price", min_value=0.0, step=10.0, value=0.0, key="repair_total")
             deposit_paid = st.number_input("Deposit Paid", min_value=0.0, step=10.0, value=0.0, key="repair_dep")
             notes = st.text_area("Notes (optional)", height=80, key="repair_notes")
@@ -384,7 +387,7 @@ with tab2:
         st.info("Edit status, deposits, notes. Remaining/Paid auto-update.")
 
         editable_cols = [
-            "Job_ID",
+            "Order_ID",
             "Client",
             "Item",
             "Repair_Type",
@@ -446,10 +449,8 @@ with tab2:
                     st.session_state.repair_df = load_or_init_csv(REPAIR_FILE, "repair")
                     st.success("Reset done (refresh if needed).")
 
-
-# -----------------------------
 # ANALYTICS TAB
-# -----------------------------
+
 with tab3:
     st.subheader("Analytics (revenue + pipeline)")
     custom = st.session_state.custom_df.copy()
@@ -491,7 +492,7 @@ with tab3:
     owed_repair["Type"] = "Repair"
 
     owed = pd.concat([owed_custom, owed_repair], ignore_index=True, sort=False)
-    show_cols = [c for c in ["Type", "Job_ID", "Client", "Item", "Status", "Total_Price", "Deposit_Paid", "Remaining_Balance"] if c in owed.columns]
+    show_cols = [c for c in ["Type", "Order_ID", "Client", "Item", "Status", "Total_Price", "Deposit_Paid", "Remaining_Balance"] if c in owed.columns]
     if owed.empty:
         st.success("No outstanding balances in the demo data.")
     else:
